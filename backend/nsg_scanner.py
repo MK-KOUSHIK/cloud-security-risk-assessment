@@ -1,14 +1,17 @@
 from azure.mgmt.network import NetworkManagementClient
 
 from backend.azure_auth import get_azure_credential
-from backend.config import AZURE_SUBSCRIPTION_ID
+from backend.config import (
+    AZURE_SUBSCRIPTION_ID,
+    AZURE_RESOURCE_GROUP,
+    AZURE_NSG_NAME,
+)
 
 
-RESOURCE_GROUP_NAME = "cloud-risk-assessment-rg"
-NSG_NAME = "cloud-risk-nsg"
+def get_nsg_security_config(resource_group_name=None, nsg_name=None):
+    rg_name = resource_group_name or AZURE_RESOURCE_GROUP
+    target_nsg = nsg_name or AZURE_NSG_NAME
 
-
-def get_nsg_security_config():
     credential = get_azure_credential()
 
     client = NetworkManagementClient(
@@ -17,8 +20,8 @@ def get_nsg_security_config():
     )
 
     nsg = client.network_security_groups.get(
-        RESOURCE_GROUP_NAME,
-        NSG_NAME
+        rg_name,
+        target_nsg
     )
 
     rules = []
@@ -29,10 +32,22 @@ def get_nsg_security_config():
             "direction": rule.direction,
             "access": rule.access,
             "protocol": rule.protocol,
-            "source": rule.source_address_prefix,
-            "source_port": rule.source_port_range,
-            "destination": rule.destination_address_prefix,
-            "destination_port": rule.destination_port_range,
+            "source": (
+                rule.source_address_prefix
+                or getattr(rule, "source_address_prefixes", None)
+            ),
+            "source_port": (
+                rule.source_port_range
+                or getattr(rule, "source_port_ranges", None)
+            ),
+            "destination": (
+                rule.destination_address_prefix
+                or getattr(rule, "destination_address_prefixes", None)
+            ),
+            "destination_port": (
+                rule.destination_port_range
+                or getattr(rule, "destination_port_ranges", None)
+            ),
             "priority": rule.priority,
         })
 

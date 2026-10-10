@@ -1,7 +1,18 @@
-from security_rules import (
-    check_storage_security,
-    check_nsg_security,
-)
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+try:
+    from security_engine.security_rules import (
+        check_storage_security,
+        check_nsg_security,
+    )
+except ImportError:
+    from security_rules import (
+        check_storage_security,
+        check_nsg_security,
+    )
 
 
 storage_config = {
